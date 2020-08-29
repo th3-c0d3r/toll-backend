@@ -23,6 +23,7 @@ public class TollPlazaController {
     public TollPlazaDto getByTollPlazaId(@PathVariable(name = "tollPlazaId") Integer tollPlazaId) throws Exception {
         return tollPlazaService.getByTollPlazaId(tollPlazaId);
     }
+// TODO: complete cron and remove endpoint.
 // TODO: response.
 // TODO: Exception handling.
 // TODO: bucketing.
