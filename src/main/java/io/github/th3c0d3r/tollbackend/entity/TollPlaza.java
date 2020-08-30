@@ -22,4 +22,5 @@ public class TollPlaza extends BaseEntity {
     private Double longitude;
     private String costTable;
     private String state;
+    private String tollPlazaImageUrl;
 }

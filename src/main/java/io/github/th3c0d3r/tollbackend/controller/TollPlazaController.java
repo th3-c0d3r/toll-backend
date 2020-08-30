@@ -3,7 +3,11 @@ package io.github.th3c0d3r.tollbackend.controller;
 import io.github.th3c0d3r.tollbackend.dto.TollPlazaDto;
 import io.github.th3c0d3r.tollbackend.service.TollPlazaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
+
+import javax.websocket.server.PathParam;
+import java.util.List;
 
 @RestController
 @RequestMapping(path = "/tollPlaza")
@@ -29,8 +33,25 @@ public class TollPlazaController {
     public void test() throws InterruptedException {
         tollPlazaService.reverseGeoCode();
     }
+
+    @GetMapping
+    @RequestMapping(path = "/getAll")
+    public List<TollPlazaDto> getByStateAndTollName(@Nullable @RequestParam(name = "stateName") String stateName,@Nullable @RequestParam(name = "tollName") String tollName){
+        return tollPlazaService.getByStateAndTollName(stateName, tollName);
+    }
+
+    @GetMapping
+    @RequestMapping(path = "/getAllTollNames")
+    public List<String> getAllTollPlazaNamesByState(@Nullable @RequestParam(name = "stateName") String stateName){
+        return tollPlazaService.getAllTollPlazaNamesByState(stateName);
+    }
+
+    @GetMapping
+    @RequestMapping(path = "/getAllStateNames")
+    public List<String> getAllTollPlazaStateNames(){
+        return tollPlazaService.getAllTollPlazaStateNames();
+    }
+
 // TODO: complete cron and remove endpoint.
-// TODO: response.
 // TODO: Exception handling.
-// TODO: bucketing.
 }

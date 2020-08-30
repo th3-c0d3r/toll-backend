@@ -99,6 +99,8 @@ public class TollPlazaService {
                         return "HtmlPopup";
                     if (field.getName().equals("tollPlazaList"))
                         return "TollPlazaInfo";
+                    if (field.getName().equals("tollPlazaImageUrl"))
+                        return "PlazaImage";
                     else
                         return field.getName();
                 }
@@ -108,6 +110,7 @@ public class TollPlazaService {
             List<TollPlaza> tollPlazaList = gson.fromJson(tollData.toString(), TollPlazaJsonConversionType.class).getTollPlazaList();
             log.info("Conversion Success. Extracting CostTable from HTML.");
             tollPlazaList.parallelStream().forEach(value -> value.setCostTable(Jsoup.parse(value.getCostTable()).select("table").first().toString()));
+            tollPlazaList.parallelStream().forEach(value -> value.setTollPlazaImageUrl("http://tis.nhai.gov.in/Admin/DownloadedFiles/"+value.getTollPlazaImageUrl()));
             log.info("CostTable extracted successfully. Persisting TollPlaza Data in DB.");
 
             createAll(tollPlazaList);
@@ -121,13 +124,15 @@ public class TollPlazaService {
     private void createAll(List<TollPlaza> tollPlazaList) {
         log.info("Preparing Data for Persist.");
         List<Integer> tollPlazaIds = tollPlazaList.parallelStream().map(TollPlaza::getTollPlazaId).collect(Collectors.toList());
-        List<TollPlaza> tollPlazaListFromDB = tollPlazaRepo.findAllByTollPlazaIdIn(tollPlazaIds);
+        List<TollPlaza> tollPlazaListFromDB = tollPlazaRepo.findAllByTollPlazaIdInAndDeleted(tollPlazaIds,false);
         Map<Integer, TollPlaza> tollPlazaIdToTollPlazaMap = tollPlazaListFromDB.parallelStream().collect(Collectors.toMap(k -> k.getTollPlazaId(), v -> v));
 
         log.info("Creating new records and updating existing entries.");
         for (TollPlaza tollPlaza : tollPlazaList) {
             if (tollPlazaIdToTollPlazaMap.containsKey(tollPlaza.getTollPlazaId())) {
                 tollPlaza.setId(tollPlazaIdToTollPlazaMap.get(tollPlaza.getTollPlazaId()).getId());
+                tollPlaza.setDeleted(tollPlazaIdToTollPlazaMap.get(tollPlaza.getTollPlazaId()).getDeleted());
+                tollPlaza.setState(tollPlazaIdToTollPlazaMap.get(tollPlaza.getTollPlazaId()).getState());
                 tollPlazaConverter.applyChanges(tollPlazaIdToTollPlazaMap.get(tollPlaza.getTollPlazaId()), tollPlaza);
             } else {
                 tollPlaza.setDeleted(false);
@@ -141,7 +146,7 @@ public class TollPlazaService {
     }
 
     public TollPlazaDto getByTollPlazaId(Integer tollPlazaId) throws Exception {
-        TollPlaza tollPlaza = tollPlazaRepo.findByTollPlazaId(tollPlazaId);
+        TollPlaza tollPlaza = tollPlazaRepo.findByTollPlazaIdAndDeleted(tollPlazaId,false);
         if (tollPlaza == null) {
             throw new Exception("No Record found for id: " + tollPlazaId);
         } else
@@ -150,29 +155,26 @@ public class TollPlazaService {
 
     public void reverseGeoCode() throws InterruptedException {
 
-        List<TollPlaza> allTollPlazaData = tollPlazaRepo.findAll();
+        List<TollPlaza> allTollPlazaData = tollPlazaRepo.findAllByDeleted(false);
         Double lattitude = 0d, longitude = 0d;
         for (TollPlaza tollPlaza : allTollPlazaData) {
 
-            if (tollPlaza.getTollPlazaId() == 4579 || tollPlaza.getTollPlazaId() ==  4609 ||tollPlaza.getTollPlazaId() ==  4563 ||tollPlaza.getTollPlazaId() ==  4562) {
+            lattitude = tollPlaza.getLatitude();
+            longitude = tollPlaza.getLongitude();
 
+            ReverseGeoCodeDto reverseGeoCodeDto = webClientBuilder.build()
+                    .post()
+                    .uri("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" + lattitude + "&lon=" + longitude)
+                    .retrieve()
+                    .bodyToMono(ReverseGeoCodeDto.class)
+                    .block();
+            log.info("{}", (reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null && reverseGeoCodeDto.getAddress().getState() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState())) ? reverseGeoCodeDto.getAddress().getState() : "not_found");
+            tollPlaza.setState((reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null
+                    && reverseGeoCodeDto.getAddress().getState() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState()))
+                    ? reverseGeoCodeDto.getAddress().getState()
+                    : "not_found");
+            Thread.sleep(800);
 
-                lattitude = tollPlaza.getLatitude();
-                longitude = tollPlaza.getLongitude();
-
-                ReverseGeoCodeDto reverseGeoCodeDto = webClientBuilder.build()
-                        .post()
-                        .uri("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" + lattitude + "&lon=" + longitude)
-                        .retrieve()
-                        .bodyToMono(ReverseGeoCodeDto.class)
-                        .block();
-                log.info("{}", (reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null && reverseGeoCodeDto.getAddress().getState() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState())) ? reverseGeoCodeDto.getAddress().getState() : "not_found");
-                tollPlaza.setState((reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null
-                        && reverseGeoCodeDto.getAddress().getState() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState()))
-                        ? reverseGeoCodeDto.getAddress().getState()
-                        : "not_found");
-                Thread.sleep(800);
-            }
         }
 
         tollPlazaRepo.saveAll(allTollPlazaData);
@@ -180,5 +182,33 @@ public class TollPlazaService {
 
     public static boolean isValidISOLatin1(String s) {
         return StandardCharsets.US_ASCII.newEncoder().canEncode(s);
+    }
+
+    public List<TollPlazaDto> getByStateAndTollName(String stateName, String tollName){
+        List<TollPlaza> tollPlazaList = new ArrayList<>();
+        if (stateName != null && !stateName.equals("") && tollName != null && !tollName.equals("")){
+            tollPlazaList = tollPlazaRepo.findAllByStateAndTollNameLikeAndDeleted(stateName, tollName, false);
+        }
+        else if (stateName != null && !stateName.equals("")){
+            tollPlazaList = tollPlazaRepo.findAllByStateAndDeleted(stateName,false);
+        }
+        else if (tollName != null && !tollName.equals("")){
+            tollPlazaList = tollPlazaRepo.findAllByTollNameAndDeleted(tollName,false);
+        }
+        else {
+            tollPlazaList = tollPlazaRepo.findAllByDeleted(false);
+        }
+        return (tollPlazaList != null && tollPlazaList.size() != 0)? tollPlazaConverter.convertEntityToDto(tollPlazaList) : new ArrayList<>();
+    }
+
+    public List<String> getAllTollPlazaNamesByState(String state){
+        if (state != null && !state.equals(""))
+            return tollPlazaRepo.findAllByStateAndDeleted(state,false).parallelStream().map(TollPlaza::getTollName).collect(Collectors.toList());
+        else
+            return tollPlazaRepo.findAllByDeleted(false).parallelStream().map(TollPlaza::getTollName).collect(Collectors.toList());
+    }
+
+    public List<String> getAllTollPlazaStateNames(){
+        return tollPlazaRepo.findAllByDeleted(false).parallelStream().map(TollPlaza::getState).distinct().collect(Collectors.toList());
     }
 }
