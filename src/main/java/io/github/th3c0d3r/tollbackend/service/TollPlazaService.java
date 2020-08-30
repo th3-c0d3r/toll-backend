@@ -173,7 +173,7 @@ public class TollPlazaService {
                     && reverseGeoCodeDto.getAddress().getState() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState()))
                     ? reverseGeoCodeDto.getAddress().getState()
                     : "not_found");
-            Thread.sleep(800);
+            Thread.sleep(1000);
 
         }
 
