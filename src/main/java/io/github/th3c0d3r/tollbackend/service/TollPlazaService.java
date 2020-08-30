@@ -4,6 +4,7 @@ import com.google.gson.FieldNamingStrategy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.github.th3c0d3r.tollbackend.converter.TollPlazaConverter;
+import io.github.th3c0d3r.tollbackend.dto.ReverseGeoCodeDto;
 import io.github.th3c0d3r.tollbackend.dto.TollPlazaDto;
 import io.github.th3c0d3r.tollbackend.dto.TollPlazaJsonConversionType;
 import io.github.th3c0d3r.tollbackend.entity.TollPlaza;
@@ -14,7 +15,8 @@ import org.json.XML;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -22,6 +24,8 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -35,7 +39,10 @@ public class TollPlazaService {
     @Autowired
     private TollPlazaConverter tollPlazaConverter;
 
-    public void populateTable(){
+    @Autowired
+    private WebClient.Builder webClientBuilder;
+
+    public void populateTable() {
 
         try {
             URL url = new URL("http://tis.nhai.gov.in/TollPlazaService.asmx");
@@ -100,32 +107,31 @@ public class TollPlazaService {
             Gson gson = builder.create();
             List<TollPlaza> tollPlazaList = gson.fromJson(tollData.toString(), TollPlazaJsonConversionType.class).getTollPlazaList();
             log.info("Conversion Success. Extracting CostTable from HTML.");
-            tollPlazaList.parallelStream().forEach( value -> value.setCostTable(Jsoup.parse(value.getCostTable()).select("table").first().toString()));
+            tollPlazaList.parallelStream().forEach(value -> value.setCostTable(Jsoup.parse(value.getCostTable()).select("table").first().toString()));
             log.info("CostTable extracted successfully. Persisting TollPlaza Data in DB.");
 
             createAll(tollPlazaList);
             log.info("Success.");
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             log.error(e.getCause().getMessage());
         }
     }
 
-    private void createAll(List<TollPlaza> tollPlazaList){
+    private void createAll(List<TollPlaza> tollPlazaList) {
         log.info("Preparing Data for Persist.");
         List<Integer> tollPlazaIds = tollPlazaList.parallelStream().map(TollPlaza::getTollPlazaId).collect(Collectors.toList());
         List<TollPlaza> tollPlazaListFromDB = tollPlazaRepo.findAllByTollPlazaIdIn(tollPlazaIds);
-        Map<Integer, TollPlaza> tollPlazaIdToTollPlazaMap = tollPlazaListFromDB.parallelStream().collect(Collectors.toMap(k -> k.getTollPlazaId(),v -> v));
+        Map<Integer, TollPlaza> tollPlazaIdToTollPlazaMap = tollPlazaListFromDB.parallelStream().collect(Collectors.toMap(k -> k.getTollPlazaId(), v -> v));
 
         log.info("Creating new records and updating existing entries.");
-        for (TollPlaza tollPlaza : tollPlazaList){
-            if (tollPlazaIdToTollPlazaMap.containsKey(tollPlaza.getTollPlazaId())){
+        for (TollPlaza tollPlaza : tollPlazaList) {
+            if (tollPlazaIdToTollPlazaMap.containsKey(tollPlaza.getTollPlazaId())) {
                 tollPlaza.setId(tollPlazaIdToTollPlazaMap.get(tollPlaza.getTollPlazaId()).getId());
-                tollPlazaConverter.applyChanges(tollPlazaIdToTollPlazaMap.get(tollPlaza.getTollPlazaId()),tollPlaza);
-            }
-            else {
+                tollPlazaConverter.applyChanges(tollPlazaIdToTollPlazaMap.get(tollPlaza.getTollPlazaId()), tollPlaza);
+            } else {
                 tollPlaza.setDeleted(false);
-                tollPlazaIdToTollPlazaMap.put(tollPlaza.getTollPlazaId(),tollPlaza);
+                tollPlazaIdToTollPlazaMap.put(tollPlaza.getTollPlazaId(), tollPlaza);
             }
         }
 
@@ -140,5 +146,39 @@ public class TollPlazaService {
             throw new Exception("No Record found for id: " + tollPlazaId);
         } else
             return tollPlazaConverter.convertEntityToDto(tollPlaza);
+    }
+
+    public void reverseGeoCode() throws InterruptedException {
+
+        List<TollPlaza> allTollPlazaData = tollPlazaRepo.findAll();
+        Double lattitude = 0d, longitude = 0d;
+        for (TollPlaza tollPlaza : allTollPlazaData) {
+
+            if (tollPlaza.getTollPlazaId() == 4579 || tollPlaza.getTollPlazaId() ==  4609 ||tollPlaza.getTollPlazaId() ==  4563 ||tollPlaza.getTollPlazaId() ==  4562) {
+
+
+                lattitude = tollPlaza.getLatitude();
+                longitude = tollPlaza.getLongitude();
+
+                ReverseGeoCodeDto reverseGeoCodeDto = webClientBuilder.build()
+                        .post()
+                        .uri("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" + lattitude + "&lon=" + longitude)
+                        .retrieve()
+                        .bodyToMono(ReverseGeoCodeDto.class)
+                        .block();
+                log.info("{}", (reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null && reverseGeoCodeDto.getAddress().getState() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState())) ? reverseGeoCodeDto.getAddress().getState() : "not_found");
+                tollPlaza.setState((reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null
+                        && reverseGeoCodeDto.getAddress().getState() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState()))
+                        ? reverseGeoCodeDto.getAddress().getState()
+                        : "not_found");
+                Thread.sleep(800);
+            }
+        }
+
+        tollPlazaRepo.saveAll(allTollPlazaData);
+    }
+
+    public static boolean isValidISOLatin1(String s) {
+        return StandardCharsets.US_ASCII.newEncoder().canEncode(s);
     }
 }

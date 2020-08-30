@@ -23,6 +23,12 @@ public class TollPlazaController {
     public TollPlazaDto getByTollPlazaId(@PathVariable(name = "tollPlazaId") Integer tollPlazaId) throws Exception {
         return tollPlazaService.getByTollPlazaId(tollPlazaId);
     }
+
+    @GetMapping
+    @RequestMapping(path = "/test")
+    public void test() throws InterruptedException {
+        tollPlazaService.reverseGeoCode();
+    }
 // TODO: complete cron and remove endpoint.
 // TODO: response.
 // TODO: Exception handling.
