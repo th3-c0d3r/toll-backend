@@ -29,12 +29,6 @@ public class TollPlazaController {
     }
 
     @GetMapping
-    @RequestMapping(path = "/tollPlaza/test")
-    public void test() throws InterruptedException {
-        tollPlazaService.reverseGeoCode();
-    }
-
-    @GetMapping
     @RequestMapping(path = "/tollPlaza/getAll")
     public List<TollPlazaDto> getByStateAndTollName(@Nullable @RequestParam(name = "stateName") String stateName, @Nullable @RequestParam(name = "tollName") String tollName) {
         return tollPlazaService.getByStateAndTollName(stateName, tollName);
