@@ -17,8 +17,9 @@ public class TollPlazaController {
 
     @PostMapping
     @RequestMapping(path = "/tollPlaza/cron")
-    public void runCron() {
+    public void runCron() throws InterruptedException {
         tollPlazaService.populateTable();
+        tollPlazaService.reverseGeoCode();
     }
 
     @GetMapping

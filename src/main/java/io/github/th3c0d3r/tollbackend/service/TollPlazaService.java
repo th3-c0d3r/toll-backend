@@ -14,6 +14,7 @@ import org.json.JSONObject;
 import org.json.XML;
 import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -153,6 +154,7 @@ public class TollPlazaService {
             return tollPlazaConverter.convertEntityToDto(tollPlaza);
     }
 
+    @Async
     public void reverseGeoCode() throws InterruptedException {
 
         List<TollPlaza> allTollPlazaData = tollPlazaRepo.findAllByDeleted(false);
