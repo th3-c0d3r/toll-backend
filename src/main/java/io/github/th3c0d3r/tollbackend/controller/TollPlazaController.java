@@ -25,8 +25,8 @@ public class TollPlazaController {
 
     @GetMapping
     @RequestMapping(path = "/tollPlaza/{tollPlazaId}")
-    public TollPlazaDto getByTollPlazaId(@PathVariable(name = "tollPlazaId") Integer tollPlazaId) throws Exception {
-        return tollPlazaService.getByTollPlazaId(tollPlazaId);
+    public ApiResponse<TollPlazaDto> getByTollPlazaId(@PathVariable(name = "tollPlazaId") Integer tollPlazaId) throws Exception {
+        return new ApiResponse<>(tollPlazaService.getByTollPlazaId(tollPlazaId));
     }
 
     @GetMapping
