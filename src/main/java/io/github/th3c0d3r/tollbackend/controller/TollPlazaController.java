@@ -1,6 +1,7 @@
 package io.github.th3c0d3r.tollbackend.controller;
 
 import io.github.th3c0d3r.tollbackend.dto.TollPlazaDto;
+import io.github.th3c0d3r.tollbackend.entity.ApiResponse;
 import io.github.th3c0d3r.tollbackend.service.TollPlazaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
@@ -30,20 +31,20 @@ public class TollPlazaController {
 
     @GetMapping
     @RequestMapping(path = "/tollPlaza/getAll")
-    public List<TollPlazaDto> getByStateAndTollName(@Nullable @RequestParam(name = "stateName") String stateName, @Nullable @RequestParam(name = "tollName") String tollName) {
-        return tollPlazaService.getByStateAndTollName(stateName, tollName);
+    public ApiResponse<List<TollPlazaDto>> getByStateAndTollName(@Nullable @RequestParam(name = "stateName") String stateName, @Nullable @RequestParam(name = "tollName") String tollName) {
+        return new ApiResponse<>(tollPlazaService.getByStateAndTollName(stateName, tollName));
     }
 
     @GetMapping
     @RequestMapping(path = "/getAllTollNames")
-    public List<String> getAllTollPlazaNamesByState(@Nullable @RequestParam(name = "stateName") String stateName) {
-        return tollPlazaService.getAllTollPlazaNamesByState(stateName);
+    public ApiResponse<List<String>> getAllTollPlazaNamesByState(@Nullable @RequestParam(name = "stateName") String stateName) {
+        return new ApiResponse<>(tollPlazaService.getAllTollPlazaNamesByState(stateName));
     }
 
     @GetMapping
     @RequestMapping(path = "/getAllStateNames")
-    public List<String> getAllTollPlazaStateNames() {
-        return tollPlazaService.getAllTollPlazaStateNames();
+    public ApiResponse<List<String>> getAllTollPlazaStateNames() {
+        return new ApiResponse<>(tollPlazaService.getAllTollPlazaStateNames());
     }
 
 // TODO: complete cron and remove endpoint.
