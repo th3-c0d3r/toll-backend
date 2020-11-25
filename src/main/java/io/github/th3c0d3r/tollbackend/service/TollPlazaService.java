@@ -13,6 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.json.XML;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -114,11 +117,95 @@ public class TollPlazaService {
             tollPlazaList.parallelStream().forEach(value -> value.setTollPlazaImageUrl("http://tis.nhai.gov.in/Admin/DownloadedFiles/"+value.getTollPlazaImageUrl()));
             log.info("CostTable extracted successfully. Persisting TollPlaza Data in DB.");
 
+            extractCost(tollPlazaList);
+
             createAll(tollPlazaList);
             log.info("Success.");
         } catch (Exception e) {
             e.printStackTrace();
             log.error(e.getCause().getMessage());
+        }
+    }
+
+    private void extractCost(List<TollPlaza> tollPlazaList) {
+
+        for (TollPlaza tollPlaza : tollPlazaList){
+
+            Document doc = Jsoup.parse(tollPlaza.getCostTable());
+            Element table = doc.select("table").first();
+            Elements tableRows = table.select("tr");
+            Double[][] tableData = new Double[tableRows.size()][];
+            for (int i = 0; i < tableRows.size(); i++) {
+                Elements cellsInRow = tableRows.get(i).select("td");
+                tableData[i] = new Double[cellsInRow.size()];
+                for (int j = 0; j < cellsInRow.size(); j++) {
+                    tableData[i][j] = (cellsInRow.get(j).text().equals("NA") || cellsInRow.get(j).text().isEmpty()) ? 0 : Double.parseDouble(cellsInRow.get(j).text());
+                }
+            }
+
+            tollPlaza.setLMVSingle(tableData[1][0]);
+            tollPlaza.setLMVReturn(tableData[1][1]);
+            tollPlaza.setLMVMonthly(tableData[1][2]);
+            if (tableData[1].length >3) {
+                tollPlaza.setLMVCommercial(tableData[1][3]);
+            }else {
+                tollPlaza.setLMVCommercial(0.0);
+
+            }
+
+            tollPlaza.setLCVSingle(tableData[2][0]);
+            tollPlaza.setLCVReturn(tableData[2][1]);
+            tollPlaza.setLCVMonthly(tableData[2][2]);
+            if (tableData[2].length >3) {
+                tollPlaza.setLCVCommercial(tableData[2][3]);
+            }else {
+                tollPlaza.setLCVCommercial(0.0);
+            }
+
+            tollPlaza.setBusTruckSingle(tableData[4][0]);
+            tollPlaza.setBusTruckReturn(tableData[4][1]);
+            tollPlaza.setBusTruckMonthly(tableData[4][2]);
+            if (tableData[4].length >3) {
+                tollPlaza.setBusTruckCommercial(tableData[4][3]);
+            }else {
+                tollPlaza.setBusTruckCommercial(0.0);
+            }
+
+            tollPlaza.setAxle3Single(tableData[6][0]);
+            tollPlaza.setAxle3Return(tableData[6][1]);
+            tollPlaza.setAxle3Monthly(tableData[6][2]);
+            if (tableData[6].length >3) {
+                tollPlaza.setAxle3Commercial(tableData[6][3]);
+            }else {
+                tollPlaza.setAxle3Commercial(0.0);
+            }
+
+            tollPlaza.setAxle4To6Single(tableData[8][0]);
+            tollPlaza.setAxle4To6Return(tableData[8][1]);
+            tollPlaza.setAxle4To6Monthly(tableData[8][2]);
+            if (tableData[8].length >3) {
+                tollPlaza.setAxle4To6Commercial(tableData[8][3]);
+            }else {
+                tollPlaza.setAxle4To6Commercial(0.0);
+            }
+
+            tollPlaza.setHCMSingle(tableData[10][0]);
+            tollPlaza.setHCMReturn(tableData[10][1]);
+            tollPlaza.setHCMMonthly(tableData[10][2]);
+            if (tableData[10].length >3) {
+                tollPlaza.setHCMCommercial(tableData[10][3]);
+            }else {
+                tollPlaza.setHCMCommercial(0.0);
+            }
+
+            tollPlaza.setAxle7PlusSingle(tableData[11][0]);
+            tollPlaza.setAxle7PlusReturn(tableData[11][1]);
+            tollPlaza.setAxle7PlusMonthly(tableData[11][2]);
+            if (tableData[11].length >3) {
+                tollPlaza.setAxle7PlusCommercial(tableData[11][3]);
+            }else {
+                tollPlaza.setAxle7PlusCommercial(0.0);
+            }
         }
     }
 
