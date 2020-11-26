@@ -249,7 +249,7 @@ public class TollPlazaService {
         Double lattitude = 0d, longitude = 0d;
         for (TollPlaza tollPlaza : allTollPlazaData) {
 
-            if (tollPlaza.getState() == null || tollPlaza.getDistrict() == null) {
+            if (tollPlaza.getState() == null || tollPlaza.getState().equals("not_found") || tollPlaza.getDistrict() == null || tollPlaza.getDistrict().equals("not_found")) {
 
                 lattitude = tollPlaza.getLatitude();
                 longitude = tollPlaza.getLongitude();
@@ -265,10 +265,19 @@ public class TollPlazaService {
                         && reverseGeoCodeDto.getAddress().getState() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState()))
                         ? reverseGeoCodeDto.getAddress().getState()
                         : "not_found");
-                tollPlaza.setDistrict((reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null
-                        && reverseGeoCodeDto.getAddress().getState_district() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState_district()))
-                        ? reverseGeoCodeDto.getAddress().getState_district()
-                        : "not_found");
+                if ((reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null)) {
+                    if (reverseGeoCodeDto.getAddress().getState_district() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState_district())) {
+                        tollPlaza.setDistrict(reverseGeoCodeDto.getAddress().getState_district());
+                    } else if (reverseGeoCodeDto.getAddress().getCounty() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getCounty())) {
+                        tollPlaza.setDistrict(reverseGeoCodeDto.getAddress().getCounty());
+                    } else if (reverseGeoCodeDto.getAddress().getVillage() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getVillage())) {
+                        tollPlaza.setDistrict(reverseGeoCodeDto.getAddress().getVillage());
+                    } else {
+                        tollPlaza.setDistrict("not_found");
+                    }
+                } else {
+                    tollPlaza.setDistrict("not_found");
+                }
                 Thread.sleep(1000);
             }
 
