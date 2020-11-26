@@ -114,7 +114,7 @@ public class TollPlazaService {
             List<TollPlaza> tollPlazaList = gson.fromJson(tollData.toString(), TollPlazaJsonConversionType.class).getTollPlazaList();
             log.info("Conversion Success. Extracting CostTable from HTML.");
             tollPlazaList.parallelStream().forEach(value -> value.setCostTable(Jsoup.parse(value.getCostTable()).select("table").first().toString()));
-            tollPlazaList.parallelStream().forEach(value -> value.setTollPlazaImageUrl("http://tis.nhai.gov.in/Admin/DownloadedFiles/"+value.getTollPlazaImageUrl()));
+            tollPlazaList.parallelStream().forEach(value -> value.setTollPlazaImageUrl("http://tis.nhai.gov.in/Admin/DownloadedFiles/" + value.getTollPlazaImageUrl()));
             log.info("CostTable extracted successfully. Persisting TollPlaza Data in DB.");
 
             extractCost(tollPlazaList);
@@ -129,7 +129,7 @@ public class TollPlazaService {
 
     private void extractCost(List<TollPlaza> tollPlazaList) {
 
-        for (TollPlaza tollPlaza : tollPlazaList){
+        for (TollPlaza tollPlaza : tollPlazaList) {
 
             Document doc = Jsoup.parse(tollPlaza.getCostTable());
             Element table = doc.select("table").first();
@@ -146,9 +146,9 @@ public class TollPlazaService {
             tollPlaza.setLMVSingle(tableData[1][0]);
             tollPlaza.setLMVReturn(tableData[1][1]);
             tollPlaza.setLMVMonthly(tableData[1][2]);
-            if (tableData[1].length >3) {
+            if (tableData[1].length > 3) {
                 tollPlaza.setLMVCommercial(tableData[1][3]);
-            }else {
+            } else {
                 tollPlaza.setLMVCommercial(0.0);
 
             }
@@ -156,54 +156,54 @@ public class TollPlazaService {
             tollPlaza.setLCVSingle(tableData[2][0]);
             tollPlaza.setLCVReturn(tableData[2][1]);
             tollPlaza.setLCVMonthly(tableData[2][2]);
-            if (tableData[2].length >3) {
+            if (tableData[2].length > 3) {
                 tollPlaza.setLCVCommercial(tableData[2][3]);
-            }else {
+            } else {
                 tollPlaza.setLCVCommercial(0.0);
             }
 
             tollPlaza.setBusTruckSingle(tableData[4][0]);
             tollPlaza.setBusTruckReturn(tableData[4][1]);
             tollPlaza.setBusTruckMonthly(tableData[4][2]);
-            if (tableData[4].length >3) {
+            if (tableData[4].length > 3) {
                 tollPlaza.setBusTruckCommercial(tableData[4][3]);
-            }else {
+            } else {
                 tollPlaza.setBusTruckCommercial(0.0);
             }
 
             tollPlaza.setAxle3Single(tableData[6][0]);
             tollPlaza.setAxle3Return(tableData[6][1]);
             tollPlaza.setAxle3Monthly(tableData[6][2]);
-            if (tableData[6].length >3) {
+            if (tableData[6].length > 3) {
                 tollPlaza.setAxle3Commercial(tableData[6][3]);
-            }else {
+            } else {
                 tollPlaza.setAxle3Commercial(0.0);
             }
 
             tollPlaza.setAxle4To6Single(tableData[8][0]);
             tollPlaza.setAxle4To6Return(tableData[8][1]);
             tollPlaza.setAxle4To6Monthly(tableData[8][2]);
-            if (tableData[8].length >3) {
+            if (tableData[8].length > 3) {
                 tollPlaza.setAxle4To6Commercial(tableData[8][3]);
-            }else {
+            } else {
                 tollPlaza.setAxle4To6Commercial(0.0);
             }
 
             tollPlaza.setHCMSingle(tableData[10][0]);
             tollPlaza.setHCMReturn(tableData[10][1]);
             tollPlaza.setHCMMonthly(tableData[10][2]);
-            if (tableData[10].length >3) {
+            if (tableData[10].length > 3) {
                 tollPlaza.setHCMCommercial(tableData[10][3]);
-            }else {
+            } else {
                 tollPlaza.setHCMCommercial(0.0);
             }
 
             tollPlaza.setAxle7PlusSingle(tableData[11][0]);
             tollPlaza.setAxle7PlusReturn(tableData[11][1]);
             tollPlaza.setAxle7PlusMonthly(tableData[11][2]);
-            if (tableData[11].length >3) {
+            if (tableData[11].length > 3) {
                 tollPlaza.setAxle7PlusCommercial(tableData[11][3]);
-            }else {
+            } else {
                 tollPlaza.setAxle7PlusCommercial(0.0);
             }
         }
@@ -212,7 +212,7 @@ public class TollPlazaService {
     private void createAll(List<TollPlaza> tollPlazaList) {
         log.info("Preparing Data for Persist.");
         List<Integer> tollPlazaIds = tollPlazaList.parallelStream().map(TollPlaza::getTollPlazaId).collect(Collectors.toList());
-        List<TollPlaza> tollPlazaListFromDB = tollPlazaRepo.findAllByTollPlazaIdInAndDeleted(tollPlazaIds,false);
+        List<TollPlaza> tollPlazaListFromDB = tollPlazaRepo.findAllByTollPlazaIdInAndDeleted(tollPlazaIds, false);
         Map<Integer, TollPlaza> tollPlazaIdToTollPlazaMap = tollPlazaListFromDB.parallelStream().collect(Collectors.toMap(k -> k.getTollPlazaId(), v -> v));
 
         log.info("Creating new records and updating existing entries.");
@@ -235,7 +235,7 @@ public class TollPlazaService {
     }
 
     public TollPlazaDto getByTollPlazaId(Integer tollPlazaId) throws Exception {
-        TollPlaza tollPlaza = tollPlazaRepo.findByTollPlazaIdAndDeleted(tollPlazaId,false);
+        TollPlaza tollPlaza = tollPlazaRepo.findByTollPlazaIdAndDeleted(tollPlazaId, false);
         if (tollPlaza == null) {
             throw new Exception("No Record found for id: " + tollPlazaId);
         } else
@@ -249,25 +249,28 @@ public class TollPlazaService {
         Double lattitude = 0d, longitude = 0d;
         for (TollPlaza tollPlaza : allTollPlazaData) {
 
-            lattitude = tollPlaza.getLatitude();
-            longitude = tollPlaza.getLongitude();
+            if (tollPlaza.getState() == null || tollPlaza.getDistrict() == null) {
 
-            ReverseGeoCodeDto reverseGeoCodeDto = webClientBuilder.build()
-                    .post()
-                    .uri("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" + lattitude + "&lon=" + longitude)
-                    .retrieve()
-                    .bodyToMono(ReverseGeoCodeDto.class)
-                    .block();
-            log.info("{}", (reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null && reverseGeoCodeDto.getAddress().getState() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState())) ? reverseGeoCodeDto.getAddress().getState() : "not_found");
-            tollPlaza.setState((reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null
-                    && reverseGeoCodeDto.getAddress().getState() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState()))
-                    ? reverseGeoCodeDto.getAddress().getState()
-                    : "not_found");
-            tollPlaza.setDistrict((reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null
-                    && reverseGeoCodeDto.getAddress().getState_district() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState_district()))
-                    ? reverseGeoCodeDto.getAddress().getState_district()
-                    : "not_found");
-            Thread.sleep(1000);
+                lattitude = tollPlaza.getLatitude();
+                longitude = tollPlaza.getLongitude();
+
+                ReverseGeoCodeDto reverseGeoCodeDto = webClientBuilder.build()
+                        .post()
+                        .uri("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" + lattitude + "&lon=" + longitude)
+                        .retrieve()
+                        .bodyToMono(ReverseGeoCodeDto.class)
+                        .block();
+                log.info("{}", (reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null && reverseGeoCodeDto.getAddress().getState() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState())) ? reverseGeoCodeDto.getAddress().getState() : "not_found");
+                tollPlaza.setState((reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null
+                        && reverseGeoCodeDto.getAddress().getState() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState()))
+                        ? reverseGeoCodeDto.getAddress().getState()
+                        : "not_found");
+                tollPlaza.setDistrict((reverseGeoCodeDto != null && reverseGeoCodeDto.getAddress() != null
+                        && reverseGeoCodeDto.getAddress().getState_district() != null && isValidISOLatin1(reverseGeoCodeDto.getAddress().getState_district()))
+                        ? reverseGeoCodeDto.getAddress().getState_district()
+                        : "not_found");
+                Thread.sleep(1000);
+            }
 
         }
 
@@ -278,31 +281,28 @@ public class TollPlazaService {
         return StandardCharsets.US_ASCII.newEncoder().canEncode(s);
     }
 
-    public List<TollPlazaDto> getByStateAndTollName(String stateName, String districtName){
+    public List<TollPlazaDto> getByStateAndTollName(String stateName, String districtName) {
         List<TollPlaza> tollPlazaList = new ArrayList<>();
-        if (stateName != null && !stateName.equals("") && districtName != null && !districtName.equals("")){
+        if (stateName != null && !stateName.equals("") && districtName != null && !districtName.equals("")) {
             tollPlazaList = tollPlazaRepo.findAllByStateAndDistrictAndDeleted(stateName, districtName, false);
-        }
-        else if (stateName != null && !stateName.equals("")){
-            tollPlazaList = tollPlazaRepo.findAllByStateAndDeleted(stateName,false);
-        }
-        else if (districtName != null && !districtName.equals("")){
-            tollPlazaList = tollPlazaRepo.findAllByDistrictAndDeleted(districtName,false);
-        }
-        else {
+        } else if (stateName != null && !stateName.equals("")) {
+            tollPlazaList = tollPlazaRepo.findAllByStateAndDeleted(stateName, false);
+        } else if (districtName != null && !districtName.equals("")) {
+            tollPlazaList = tollPlazaRepo.findAllByDistrictAndDeleted(districtName, false);
+        } else {
             tollPlazaList = tollPlazaRepo.findAllByDeleted(false);
         }
-        return (tollPlazaList != null && tollPlazaList.size() != 0)? tollPlazaConverter.convertEntityToDto(tollPlazaList) : new ArrayList<>();
+        return (tollPlazaList != null && tollPlazaList.size() != 0) ? tollPlazaConverter.convertEntityToDto(tollPlazaList) : new ArrayList<>();
     }
 
-    public List<String> getAllTollPlazaNamesByState(String state){
+    public List<String> getAllTollPlazaNamesByState(String state) {
         if (state != null && !state.equals(""))
-            return tollPlazaRepo.findAllByStateAndDeleted(state,false).parallelStream().map(TollPlaza::getTollName).collect(Collectors.toList());
+            return tollPlazaRepo.findAllByStateAndDeleted(state, false).parallelStream().map(TollPlaza::getTollName).collect(Collectors.toList());
         else
             return tollPlazaRepo.findAllByDeleted(false).parallelStream().map(TollPlaza::getTollName).collect(Collectors.toList());
     }
 
-    public List<String> getAllTollPlazaStateNames(){
+    public List<String> getAllTollPlazaStateNames() {
         return tollPlazaRepo.findAllByDeleted(false).parallelStream().map(TollPlaza::getState).distinct().collect(Collectors.toList());
     }
 
