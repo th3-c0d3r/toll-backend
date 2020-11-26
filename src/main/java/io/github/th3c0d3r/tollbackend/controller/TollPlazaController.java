@@ -31,8 +31,8 @@ public class TollPlazaController {
 
     @GetMapping
     @RequestMapping(path = "/tollPlaza/getAll")
-    public ApiResponse<List<TollPlazaDto>> getByStateAndTollName(@Nullable @RequestParam(name = "stateName") String stateName, @Nullable @RequestParam(name = "tollName") String tollName) {
-        return new ApiResponse<>(tollPlazaService.getByStateAndTollName(stateName, tollName));
+    public ApiResponse<List<TollPlazaDto>> getByStateAndTollName(@Nullable @RequestParam(name = "stateName") String stateName, @Nullable @RequestParam(name = "districtName") String districtName) {
+        return new ApiResponse<>(tollPlazaService.getByStateAndTollName(stateName, districtName));
     }
 
     @GetMapping
@@ -45,6 +45,12 @@ public class TollPlazaController {
     @RequestMapping(path = "/getAllStateNames")
     public ApiResponse<List<String>> getAllTollPlazaStateNames() {
         return new ApiResponse<>(tollPlazaService.getAllTollPlazaStateNames());
+    }
+
+    @GetMapping
+    @RequestMapping(path = "/getAllDistrict")
+    public ApiResponse<List<String>> getAllDistrictsByState(@Nullable @RequestParam(name = "stateName") String stateName) {
+        return new ApiResponse<>(tollPlazaService.getAllDistrictsByState(stateName));
     }
 
 // TODO: complete cron and remove endpoint.

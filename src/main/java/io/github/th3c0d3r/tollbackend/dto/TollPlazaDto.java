@@ -17,6 +17,7 @@ public class TollPlazaDto {
     private Double latitude;
     private Double longitude;
     private String costTable;
+    private String district;
     private String tollPlazaImageUrl;
 
     private Double LMVSingle;

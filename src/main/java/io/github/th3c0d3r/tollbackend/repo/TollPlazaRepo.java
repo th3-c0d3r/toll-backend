@@ -15,6 +15,8 @@ public interface TollPlazaRepo extends JpaRepository<TollPlaza, Integer> {
     public List<TollPlaza> findAllByTollPlazaIdInAndDeleted(Collection<Integer> tollPlazaId, Boolean deleted);
     public List<TollPlaza> findAllByTollNameAndDeleted(String tollName, Boolean deleted);
     public List<TollPlaza> findAllByStateAndDeleted(String state, Boolean deleted);
+    public List<TollPlaza> findAllByDistrictAndDeleted(String district, Boolean deleted);
     public List<TollPlaza> findAllByStateAndTollNameLikeAndDeleted(String state, String tollName, Boolean deleted);
+    public List<TollPlaza> findAllByStateAndDistrictAndDeleted(String state, String district, Boolean deleted);
     public List<TollPlaza> findAllByDeleted(Boolean deleted);
 }
