@@ -46,6 +46,9 @@ public class TollPlazaService {
     @Autowired
     private WebClient.Builder webClientBuilder;
 
+    @Autowired
+    private MapService mapService;
+
     public void populateTable() {
 
         try {
