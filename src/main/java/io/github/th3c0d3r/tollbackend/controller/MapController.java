@@ -16,15 +16,13 @@ public class MapController {
     @Autowired
     private MapService mapService;
 
-    @GetMapping
-    @RequestMapping(path = "/route")
+    @GetMapping(path = "/route")
     public ApiResponse<RouteCostDto> getRoute(@RequestParam(name = "startLat") Double startLat, @RequestParam(name = "startLong") Double startLong,
                                               @RequestParam(name = "stopLat") Double stopLat, @RequestParam(name = "stopLong") Double stopLong){
         return new ApiResponse<>(mapService.getRoute(startLat, startLong, stopLat, stopLong));
     }
 
-    @GetMapping
-    @RequestMapping(path = "/routeWithCost")
+    @GetMapping(path = "/routeWithCost")
     public ApiResponse<RouteCostDto> getRouteWithCost(@RequestParam(name = "startLat") Double startLat, @RequestParam(name = "startLong") Double startLong,
                                                       @RequestParam(name = "stopLat") Double stopLat, @RequestParam(name = "stopLong") Double stopLong){
         return new ApiResponse<>(mapService.getCost(startLat, startLong, stopLat, stopLong));

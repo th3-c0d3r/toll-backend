@@ -16,39 +16,33 @@ public class TollPlazaController {
     @Autowired
     private TollPlazaService tollPlazaService;
 
-    @PostMapping
-    @RequestMapping(path = "/tollPlaza/cron")
+    @PostMapping(path = "/tollPlaza/cron")
     public void runCron() throws InterruptedException {
         tollPlazaService.populateTable();
         tollPlazaService.reverseGeoCode();
     }
 
-    @GetMapping
-    @RequestMapping(path = "/tollPlaza/{tollPlazaId}")
+    @GetMapping(path = "/tollPlaza/{tollPlazaId}")
     public ApiResponse<TollPlazaDto> getByTollPlazaId(@PathVariable(name = "tollPlazaId") Integer tollPlazaId) throws Exception {
         return new ApiResponse<>(tollPlazaService.getByTollPlazaId(tollPlazaId));
     }
 
-    @GetMapping
-    @RequestMapping(path = "/tollPlaza/getAll")
+    @GetMapping(path = "/tollPlaza/getAll")
     public ApiResponse<List<TollPlazaDto>> getByStateAndTollName(@Nullable @RequestParam(name = "stateName") String stateName, @Nullable @RequestParam(name = "districtName") String districtName) {
         return new ApiResponse<>(tollPlazaService.getByStateAndTollName(stateName, districtName));
     }
 
-    @GetMapping
-    @RequestMapping(path = "/getAllTollNames")
+    @GetMapping(path = "/getAllTollNames")
     public ApiResponse<List<String>> getAllTollPlazaNamesByState(@Nullable @RequestParam(name = "stateName") String stateName) {
         return new ApiResponse<>(tollPlazaService.getAllTollPlazaNamesByState(stateName));
     }
 
-    @GetMapping
-    @RequestMapping(path = "/getAllStateNames")
+    @GetMapping(path = "/getAllStateNames")
     public ApiResponse<List<String>> getAllTollPlazaStateNames() {
         return new ApiResponse<>(tollPlazaService.getAllTollPlazaStateNames());
     }
 
-    @GetMapping
-    @RequestMapping(path = "/getAllDistrict")
+    @GetMapping(path = "/getAllDistrict")
     public ApiResponse<List<String>> getAllDistrictsByState(@Nullable @RequestParam(name = "stateName") String stateName) {
         return new ApiResponse<>(tollPlazaService.getAllDistrictsByState(stateName));
     }
