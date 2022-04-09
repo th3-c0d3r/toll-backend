@@ -3,6 +3,7 @@ package io.github.th3c0d3r.tollbackend.controller;
 import io.github.th3c0d3r.tollbackend.dto.TollPlazaDto;
 import io.github.th3c0d3r.tollbackend.entity.ApiResponse;
 import io.github.th3c0d3r.tollbackend.service.TollPlazaService;
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ public class TollPlazaController {
     @Autowired
     private TollPlazaService tollPlazaService;
 
+    @Hidden
     @PostMapping(path = "/tollPlaza/cron")
     public void runCron() throws InterruptedException {
         tollPlazaService.populateTable();
